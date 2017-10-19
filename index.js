@@ -9,7 +9,10 @@ const PluginError = gutil.PluginError.bind(null, "gulp-swg");
 
 function compile() {
     return through.obj(function(file, enc, callback) {
-        if (file.isNull()) { callback(null, file); return; }
+        if (file.isNull()) {
+            callback(null, file);
+            return;
+        }
         if (file.isStream()) {
             callback(new PluginError("Streaming not supported"));
             return;
@@ -17,15 +20,16 @@ function compile() {
         try {
             const relativePath = path.relative(file.cwd, file.path),
                   dataFile = relativePath
-                  .replace(/template/, "data")
-                  .replace(/.html/, ".js");
+                  .replace(/templates/, "data")
+                  .replace(/.html/, ".js"),
+                  absDataFile = path.join(file.cwd, dataFile);
 
-            const data = require(dataFile);
+            const data = require(absDataFile);
 
             file.contents = new Buffer(nunjucks.renderString(file.contents.toString(), data));
             this.push(file);
         } catch (error) {
-            this.emit(new PluginError(err, {filename: file.path}));
+            this.emit("error", new PluginError(error, {filename: file.path}));
         }
         callback();
     });
