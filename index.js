@@ -1,14 +1,13 @@
 "use strict";
 
-const
-gutil = require("gulp-util"),
-path = require("path"),
-nunjucks = require("nunjucks"),
-through = require("through2");
+const gutil = require("gulp-util"),
+      path = require("path"),
+      nunjucks = require("nunjucks"),
+      through = require("through2");
 
 const PluginError = gutil.PluginError.bind(null, "gulp-swg");
 
-function compile(template) {
+function compile() {
     return through.obj(function(file, enc, callback) {
         if (file.isNull()) { callback(null, file); return; }
         if (file.isStream()) {
@@ -23,7 +22,7 @@ function compile(template) {
 
             const data = require(dataFile);
 
-            file.contents = new Buffer(nunjucks.renderString(template, data));
+            file.contents = new Buffer(nunjucks.renderString(file.contents.toString(), data));
             this.push(file);
         } catch (error) {
             this.emit(new PluginError(err, {filename: file.path}));
