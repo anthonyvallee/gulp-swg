@@ -1,6 +1,6 @@
 {
   "name": "gulp-swg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Static website generator plugin for Gulp, requiring minimal setup and using Nunjucks as a template engine.",
   "main": "index.js",
   "scripts": {
