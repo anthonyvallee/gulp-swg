@@ -1,11 +1,16 @@
 "use strict";
 
-const gutil = require("gulp-util"),
+const fs = require("fs"),
+      gutil = require("gulp-util"),
       path = require("path"),
       nunjucks = require("nunjucks"),
       through = require("through2");
 
-const PluginError = gutil.PluginError.bind(null, "gulp-swg");
+nunjucks.configure("src/templates", { noCache: true });
+
+function loadObjectModule(path) {
+    return fs.existsSync(path) ? require(path) : {};
+}
 
 function compile() {
     return through.obj(function(file, enc, callback) {
@@ -17,16 +22,27 @@ function compile() {
             callback(new PluginError("Streaming not supported"));
             return;
         }
+        if (path.basename(file.path).startsWith("_")) {
+            callback();
+            return;
+        }
         try {
+            const globalDataPath = path.join(file.cwd, "src", "global.js");
+
+            const globalData = loadObjectModule(globalDataPath);
+
             const relativePath = path.relative(file.cwd, file.path),
-                  dataFile = relativePath
+                  fileDataPath = relativePath
                   .replace(/templates/, "data")
-                  .replace(/.html/, ".js"),
-                  absDataFile = path.join(file.cwd, dataFile);
+                  .replace(/.(html|nunjucks|jinja)/, ".js");
 
-            const data = require(absDataFile);
+            const absFileDataPath = path.join(file.cwd, fileDataPath);
 
-            file.contents = new Buffer(nunjucks.renderString(file.contents.toString(), data));
+            const fileData = loadObjectModule(absFileDataPath);
+
+            const data = Object.assign({}, globalData, fileData);
+
+            file.contents = new Buffer(nunjucks.render(file.path, data));
             this.push(file);
         } catch (error) {
             this.emit("error", new PluginError(error, {filename: file.path}));
